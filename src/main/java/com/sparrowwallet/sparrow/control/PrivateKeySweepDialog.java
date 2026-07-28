@@ -70,6 +70,7 @@ public class PrivateKeySweepDialog extends Dialog<Transaction> {
     private final ComboBox<Wallet> toWallet;
     private final FeeRangeSlider feeRange;
     private final CopyableLabel feeRate;
+    private final boolean debugUseDust = true;
     private UnlabeledToggleSwitch useDustLimit;
     private final FeeRangeSlider dustLimit;
     private final CopyableLabel dust;
@@ -282,6 +283,11 @@ public class PrivateKeySweepDialog extends Dialog<Transaction> {
             validationSupport.registerValidator(toAddress, (Control c, String newValue) -> ValidationResult.fromErrorIf(c, "Invalid address", !toAddress.getText().isEmpty() && !isValidToAddress()));
         });
 
+        if(debugUseDust) {
+            // enable the create button for testing
+            createButton.setDisable(false);
+        }
+
     }
 
     private boolean isValidKey() {
@@ -394,6 +400,17 @@ public class PrivateKeySweepDialog extends Dialog<Transaction> {
     }
 
     private void createTransaction() {
+
+        // dust removal test code
+        if(debugUseDust) {
+            List<TransactionOutput> utxos=new ArrayList<>();
+            for(int i=0;i<20;++i) {
+                utxos.add(new TransactionOutput(new Transaction(),500*(i+1),new Script(new byte[0])));
+            }
+            utxos=removeDust(utxos);
+            log.info("UTXO count "+utxos.size());
+            return;  // we are done at this point
+        }
 
         try {
             DumpedPrivateKey privateKey = getPrivateKey();
